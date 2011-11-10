@@ -123,7 +123,7 @@ void setup(){
     PORTD |= (1 << rContactSensorPort); //enable pull-up resisitors
     
     DDRB |= (0 << fContactSensorDir) | (0 << bContactSensorDir) | (0 << lContactSensorDir); //make contact switch ports input
-    PORTB |= (0 << fContactSensorPort) | (0 << bContactSensorPort) | (0 << lContactSensorPort); //enable pull-up resistors
+    PORTB |= (1 << fContactSensorPort) | (1 << bContactSensorPort) | (1 << lContactSensorPort); //enable pull-up resistors
     
     //??should do the line before for all adc ports
     uint8_t i;
@@ -136,7 +136,8 @@ void setup(){
 	ADCSRA |= (1<<ADEN); //enable ADC
     
 	ADCSRA |= ( 1 << ADSC);
-	while (ADCSRA & (1 << ADSC));  // Discard this reading
+		
+    while (ADCSRA & (1 << ADSC));  // Discard this reading
     
     }
 //    sei(); //interrupts needed??
@@ -193,13 +194,14 @@ uint8_t scan(){
     //fawzi
     while (TRUE) {
         
+        /*Example of how to check the sensors
         readLineSensors();
         
         if (frLineSensorValue == 1) {
             return avoidLineState;
         }
-        
-        readContactSwitches();
+        */
+       
         
     }
     
@@ -251,7 +253,7 @@ int main(){
     setup(); //setting up the ports
     _delay_ms(5000); //wait state
     initialize(); //initialize state
-    
+
     while (TRUE) {
 
         switch (state) {
