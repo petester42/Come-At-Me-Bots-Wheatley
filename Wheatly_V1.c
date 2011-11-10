@@ -5,6 +5,7 @@
 //  Created by Pete on 11-11-08.
 //  Copyright 2011 Pierre-Marc Airoldi, Fawzi Kabbara. All rights reserved.
 //
+#define F_CPU 1000000UL
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -65,15 +66,15 @@
 #define bcIRSensor 4 //ADC4 PC4
 #define brIRSensor 5 //ADC5 PC5
 
-#define scan 1
-#define position 2
-#define flank 3
-#define push 4
-#define escape 5
-#define avoidLine 6
-#define returnToRing 7
-#define losingOutput 8
-#define winningOutput 9
+#define scanState 1
+#define positionState 2
+#define flankState 3
+#define pushState 4
+#define escapeState 5
+#define avoidLineState 6
+#define returnToRingState 7
+#define losingOutputState 8
+#define winningOutputState 9
 
 #define forward 1
 #define backward 2
@@ -115,32 +116,19 @@ void setup(){
     //adc
     //interrupts
     
-    flLineSensorDir = 0; //make port input
-    flLineSensorPort = 0; //dont enable pull-up resistor
+    DDRD |= (0 << flLineSensorDir) | (0 << frLineSensorDir) | (0 << blLineSensorDir) | (0 << brLineSensorDir);//make line sensor ports input
+    PORTD |= (0 << flLineSensorPort) | (0 << frLineSensorPort) | (0 << blLineSensorPort) | (0 << brLineSensorPort);//dont enable pull up resistors
     
-    frLineSensorDir = 0; //make port input
-    frLineSensorPort = 0; //dont enable pull-up resistor
+    DDRD |= (0 << rContactSensorDir); //make contact switch ports input
+    PORTD |= (1 << rContactSensorPort); //enable pull-up resisitors
     
-    blLineSensorDir = 0; //make port input
-    blLineSensorPort = 0; //dont enable pull-up resistor
-    
-    brLineSensorDir = 0; //make port input
-    brLineSensorPort = 0; //dont enable pull-up resistor
-    
-    fContactSensorDir = 0; //make port input
-    fContactSensorPort = 1; //enable pull-up resistor
-    
-    bContactSensorDir = 0; //make port input
-    bContactSensorPort = 1; //enable pull-up resistor
-    
-    rContactSensorDir = 0; //make port input
-    rContactSensorPort = 1; //enable pull-up resistor
-    
-    lContactSensorDir = 0; //make port input
-    lContactSensorPort = 1; //enable pull-up resistor
+    DDRB |= (0 << fContactSensorDir) | (0 << bContactSensorDir) | (0 << lContactSensorDir); //make contact switch ports input
+    PORTB |= (0 << fContactSensorPort) | (0 << bContactSensorPort) | (0 << lContactSensorPort); //enable pull-up resistors
     
     //??should do the line before for all adc ports
-    for (uint8_t i = 0; i<6; ++i) {
+    uint8_t i;
+    
+    for (i = 0; i < 6; ++i) {
     
     ADMUX = (1 << REFS0) | (1 <<REFS1) | (1<<ADLAR) | i; 
     
@@ -164,6 +152,39 @@ uint8_t readADC(uint8_t channel) {
     return ADCH; 
 } 
 
+void move (uint8_t direction, uint8_t speed, uint8_t duration){
+    //pierre-marc
+    
+}
+
+void readLineSensors(){
+    
+    frLineSensorValue = frLineSensorPin;
+    flLineSensorValue = flLineSensorPin;
+    brLineSensorValue = brLineSensorPin;
+    blLineSensorValue = blLineSensorPin;
+}
+
+void readContactSwitches(){
+
+    fContactSensorValue = fContactSensorPin;
+    bContactSensorValue = bContactSensorPin;
+    lContactSensorValue = lContactSensorPin;
+    rContactSensorValue = rContactSensorPin;
+
+}
+
+void readIRSensors(){
+    
+    frIRSensorValue = readADC(frIRSensor);
+    fcIRSensorValue = readADC(fcIRSensor);
+    flIRSensorValue = readADC(flIRSensor);
+    brIRSensorValue = readADC(brIRSensor);
+    bcIRSensorValue = readADC(bcIRSensor);
+    blIRSensorValue = readADC(blIRSensor);
+    
+}
+
 void initialize(){
     //fawzi
 }
@@ -172,13 +193,13 @@ uint8_t scan(){
     //fawzi
     while (TRUE) {
         
-        checkLineSensors();
+        readLineSensors();
         
         if (frLineSensorValue == 1) {
-            return avoidLine;
+            return avoidLineState;
         }
         
-        checkContactSwitches();
+        readContactSwitches();
         
     }
     
@@ -225,39 +246,6 @@ uint8_t winningOutput() {
     return 0;
 }
 
-void move (uint8_t direction, uint8_t speed, uint8_t duration){
-    //pierre-marc
-    
-}
-
-void readLineSensors(){
-    
-    frLineSensorValue = frLineSensorPin;
-    flLineSensorValue = flLineSensorPin;
-    brLineSensorValue = brLineSensorPin;
-    blLineSensorValue = blLineSensorPin;
-}
-
-void readContactSwitches(){
-
-    fContactSensorValue = fContactSensorPin;
-    bContactSensorValue = bContactSensorPin;
-    lContactSensorValue = lContactSensorPin;
-    rContactSensorValue = rContactSensorPin;
-
-}
-
-void readIRSensors(){
-    
-    frIRSensorValue = readADC(frIRSensor);
-    fcIRSensorValue = readADC(fcIRSensor);
-    flIRSensorValue = readADC(flIRSensor);
-    brIRSensorValue = readADC(brIRSensor);
-    bcIRSensorValue = readADC(bcIRSensor);
-    blIRSensorValue = readADC(blIRSensor);
-    
-}
-
 int main(){
     
     setup(); //setting up the ports
@@ -267,31 +255,31 @@ int main(){
     while (TRUE) {
 
         switch (state) {
-            case 1:
+            case scanState:
                 state = scan();
                 break;
-            case 2:
+            case positionState:
                 state = position();
                 break;
-            case 3:
+            case flankState:
                 state = flank();
                 break;
-            case 4:
+            case pushState:
                 state = push();
                 break;
-            case 5:
+            case escapeState:
                 state = escape();
                 break;
-            case 6:
+            case avoidLineState:
                 state = avoidLine();
                 break;
-            case 7:
+            case returnToRingState:
                 state = returnToRing();
                 break;
-            case 8:
+            case losingOutputState:
                 state = losingOutput();
                 break;
-            case 9:
+            case winningOutputState:
                 state = winningOutput();
                 break;
             default:
