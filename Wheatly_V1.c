@@ -136,7 +136,7 @@ void setup(){
 	ADCSRA |= (1<<ADEN); //enable ADC
     
 	ADCSRA |= ( 1 << ADSC);
-		
+
     while (ADCSRA & (1 << ADSC));  // Discard this reading
     
     }
@@ -187,22 +187,70 @@ void readIRSensors(){
 }
 
 void initialize(){
-    //fawzi
+	//fawzi
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+        
+	while(frLineSensorValue == 0 || flLineSensorValue == 0 || brLineSensorValue == 0 || blLineSensorValue = 0){
+		//move backwards
+	if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+		//move away from line
+		_delay_ms(2000);
+	}
+
+				
+		
+    
 }
 
 uint8_t scan(){
     //fawzi
     while (TRUE) {
         
-        /*Example of how to check the sensors
         readLineSensors();
-        
-        if (frLineSensorValue == 1) {
-            return avoidLineState;
-        }
-        */
-       
-        
+		readContactSwitches();
+		readIRSensors();
+		if(/*no sensors activated*/){
+			//turn 60 degrees right
+		}
+		else (/*check all sensors and return state accordingly*/){
+			
+		}
+		
+		readLineSensors();
+	    readContactSwitches();
+	    readIRSensors();
+		if(/*no sensors activated*/){
+			//move forward for 2 seconds
+			//_delay_ms(2000) ???
+		}
+		else (/*check all sensors and return state accordingly*/){
+			
+		}
+		
+		readLineSensors();
+	    readContactSwitches();
+	    readIRSensors();
+		if(/*no sensors activated*/){
+			//turn 120 degrees left
+		}
+		else (/*check all sensors and return state accordingly*/){
+			
+		}
+		
+		readLineSensors();
+	    readContactSwitches();
+	    readIRSensors();
+		if(/*no sensors activated*/){
+			//move forward for 2 seconds
+			//_delay_ms(2000) ???
+		}
+		else (/*check all sensors and return state accordingly*/){
+		}	
+		
+		//loop back to beginning of function		
+           
     }
     
     return 0;
@@ -210,6 +258,23 @@ uint8_t scan(){
 
 uint8_t position(){
     //fawzi
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+	/*if (line sensors activated && IR sensors deactivated){
+		return avoidLineState;
+	} */	
+	/*if (front sensor activated){
+		do something;
+	} */	
+	
+	if (flIRSensorValue == 1){
+		//turn left
+	}
+	
+	else if (frIRSensorValue == 1){
+		//turn right
+	}				
     return 0;
 }
 
@@ -220,16 +285,55 @@ uint8_t flank(){
 
 uint8_t push(){
     //fawzi
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+	/*if (line sensors activated && contact sensors deactivated){
+		return avoidLineState;
+	} */
+	
+	if(fContactSensorValue == 1 || bContactSensorValue == 1 || rContactSensorValue == 1 || lContactSensorValue == 1){
+	//push opponent
+	}		
     return 0;
 }
 
 uint8_t escape(){
     //fawzi
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+	/*if (line sensors activated &&  rContactSensorValue == 0 && lContactSensorValue == 0){
+		return avoidLineState;
+	} */
+	
+	if(rContactSensorValue == 1){
+		//move forward and left
+	}
+	else if(lContactSensorValue == 1){
+		//move forward and right
+	}
+	else if(rContactSensorValue == 1 && lContactSensorValue == 1){
+		//move forward full power
+	}						
     return 0;
 }
 
 uint8_t avoidLine() {
     //fawzi
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+	/*if (line sensors deactivated){
+		return scanState;
+	} */
+	while (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+		//go in opposite direction of line
+		//if pushed over line
+		//return returnToRingState
+		//OR return losingOutputState ???
+	}
+	
     return 0;
 }
 
