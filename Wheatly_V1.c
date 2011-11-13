@@ -66,6 +66,24 @@
 #define bcIRSensor 4 //ADC4 PC4
 #define brIRSensor 5 //ADC5 PC5
 
+//PWM
+#define PWMLeftMotorDir DDB1
+#define PWMRightMotorDir DDB2
+#define PWMSpeakerDir DDB3
+
+//Left Motor 
+#define HighLeftMotorPort PORTD7 //1A
+#define HighLeftMotorDir DDD7
+#define LowLeftMotorPort PORTB0 //2A
+#define LowLeftMotorDir DDB0
+
+//Right Motor
+#define HighRightMotorPort PORTD6 //4A
+#define HighRightMotorDir DDD6
+#define LowRightMotorPort PORTD5 //3A
+#define LowRightMotorDir DDD5
+
+//states
 #define scanState 1
 #define positionState 2
 #define flankState 3
@@ -76,11 +94,15 @@
 #define losingOutputState 8
 #define winningOutputState 9
 
+//direction of motor
+#define brake 0
 #define forward 1
 #define backward 2
-#define left 3
-#define right 4
-#define brake 0
+#define frontleft 3
+#define frontright 4
+#define backleft 5
+#define backright 6
+
 
 //use uint8_t instead of int since it takes less space on the memory
 
@@ -125,22 +147,39 @@ void setup(){
     DDRB |= (0 << fContactSensorDir) | (0 << bContactSensorDir) | (0 << lContactSensorDir); //make contact switch ports input
     PORTB |= (1 << fContactSensorPort) | (1 << bContactSensorPort) | (1 << lContactSensorPort); //enable pull-up resistors
     
+    DDRB |= (1 << PWMSpeakerDir) | (1 << PWMLeftMotorDir) | (1 << PWMRightMotorDir) | (1 << HighLeftMotorDir) | (1 << LowLeftMotorDir) | (1 << HighRightMotorDir) | (1 << LowRightMotorDir); 
+    
+    //set up motor PWM
+    
+    TCCR1A = 0; 
+    
+    TCCR1A |= (1<<WGM13) | (1<<WGM10); // Phase & Frequency Correct PWM
+    
+    TCCR1B = 0;
+    
+    TCCR1B = (1 << WGM13) | (1 << CS10); // Phase and Frequency Correct PWM mode, with no prescaling
+    
+    TCCR1A = (1 << COM1A1) | (1 << COM1B1); // enable channel A & B in non-inverting mode
+    
+    
     //??should do the line before for all adc ports
     uint8_t i;
     
     for (i = 0; i < 6; ++i) {
-    
-    ADMUX = (1 << REFS0) | (1 <<REFS1) | (1<<ADLAR) | i; 
-    
-	ADCSRA |= (0<<ADPS2) | (1<<ADPS1) | (1<<ADPS0); //set prescaler to 8
-	ADCSRA |= (1<<ADEN); //enable ADC
-    
-	ADCSRA |= ( 1 << ADSC);
+        
+        ADMUX = (1 << REFS0) | (1 <<REFS1) | (1<<ADLAR) | i; 
+        
+        ADCSRA |= (0<<ADPS2) | (1<<ADPS1) | (1<<ADPS0); //set prescaler to 8
+        ADCSRA |= (1<<ADEN); //enable ADC
+        
+        ADCSRA |= ( 1 << ADSC);
 		
-    while (ADCSRA & (1 << ADSC));  // Discard this reading
-    
+        while (ADCSRA & (1 << ADSC));  // Discard this reading
+        
     }
-//    sei(); //interrupts needed??
+    
+    
+    //    sei(); //interrupts needed??
 }
 
 
@@ -153,8 +192,107 @@ uint8_t readADC(uint8_t channel) {
     return ADCH; 
 } 
 
-void move (uint8_t direction, uint8_t speed, uint8_t duration){
+void move (uint8_t direction, uint8_t speed){
     //pierre-marc
+    //speed are values from 0-255
+    //OC1A left motor
+    //OC1B right motor
+    
+    // HighLeftMotorPort PORTD7 //1A
+    // LowLeftMotorPort PORTB0 //2A
+    // HighRightMotorPort PORTD6 //4A
+    // LowRightMotorPort PORTD5 //3A
+    
+    switch (direction) {
+            
+        case forward:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (1 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (1 << LowRightMotorPort);
+            
+            OCR1A = speed;
+            OCR1B = speed;
+            
+            break;
+            
+        case backward:
+            PORTD | = (1 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (1 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = speed;
+            OCR1B = speed;
+            
+            break;
+            
+        case frontleft:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (1 << LowRightMotorPort);
+            
+            OCR1A = speed;
+            OCR1B = 0;
+            
+            break;
+            
+        case frontright:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (1 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = 0;
+            OCR1B = speed;
+            
+            break;
+            
+        case backleft:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (1 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = speed;
+            OCR1B = 0;
+            
+            break;
+            
+        case backright:
+            PORTD | = (1 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = 0;
+            OCR1B = speed;
+            
+            break;
+            
+        case brake:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = 0;
+            OCR1B = 0;
+            
+            break;
+            
+        default:
+            PORTD | = (0 << HighLeftMotorPort);
+            PORTB | = (0 << LowLeftMotorPort);
+            PORTD | = (0 << HighRightMotorPort);
+            PORTD | = (0 << LowRightMotorPort);
+            
+            OCR1A = 0;
+            OCR1B = 0;
+            
+            break;
+    }
     
 }
 
@@ -167,12 +305,12 @@ void readLineSensors(){
 }
 
 void readContactSwitches(){
-
+    
     fContactSensorValue = fContactSensorPin;
     bContactSensorValue = bContactSensorPin;
     lContactSensorValue = lContactSensorPin;
     rContactSensorValue = rContactSensorPin;
-
+    
 }
 
 void readIRSensors(){
@@ -195,13 +333,13 @@ uint8_t scan(){
     while (TRUE) {
         
         /*Example of how to check the sensors
-        readLineSensors();
+         readLineSensors();
+         
+         if (frLineSensorValue == 1) {
+         return avoidLineState;
+         }
+         */
         
-        if (frLineSensorValue == 1) {
-            return avoidLineState;
-        }
-        */
-       
         
     }
     
@@ -245,6 +383,8 @@ uint8_t losingOutput() {
 
 uint8_t winningOutput() {
     //pierre-marc
+    
+    
     return 0;
 }
 
@@ -253,9 +393,9 @@ int main(){
     setup(); //setting up the ports
     _delay_ms(5000); //wait state
     initialize(); //initialize state
-
+    
     while (TRUE) {
-
+        
         switch (state) {
             case scanState:
                 state = scan();
