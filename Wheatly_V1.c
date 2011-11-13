@@ -331,31 +331,27 @@ void initialize(){
 	readIRSensors();
         
 	while(TRUE){
-    if (frLineSensorValue == 0 || flLineSensorValue == 0 || brLineSensorValue == 0 || blLineSensorValue = 0){
-		//move backwards}
-	else if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+    if (frLineSensorValue == 0 || flLineSensorValue == 0 || brLineSensorValue == 0 || blLineSensorValue == 0){
+		//move backwards
+		return backward;
+	}
+			
+	else if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
 		//move away from line
+		return avoidLineState;
 		_delay_ms(2000);
 	}
+	return 0;
 }
 
 uint8_t scan(){
     //fawzi
     while (TRUE) {
-
-        
-        /*Example of how to check the sensors
-         readLineSensors();
-         
-         if (frLineSensorValue == 1) {
-         return avoidLineState;
-         }
-         */
         
         readLineSensors();
 		readContactSwitches();
 		readIRSensors();
-		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue = 0 
+		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
@@ -366,57 +362,120 @@ uint8_t scan(){
 			//move forward
 			_delay_ms(2000); */
 		}
-		else (/*check all sensors and return position, push, avoidLine or escape state accordingly*/){
-
+		
+		/*check all sensors and return position, push, avoidLine or escape state accordingly*/
+		
+		else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+			return avoidLineState;
 		}
+		
+		else if(fContactSensorValue == 1 || bContactSensorValue == 1 || rContactSensorValue == 1 || lContactSensorValue == 1){
+			return pushState;
+		}	
+		
+        else if(frIRSensorValue < 200 || fcIRSensorValue < 200 || flIRSensorValue < 200 
+		   || brIRSensorValue < 200 || bcIRSensorValue < 200 || blIRSensorValue < 200){
+			   return positionState;
+		   }
+		   
+	    else if(lContactSensorValue == 1 && rContactSensorValue ==1){
+			return escapeState;
+		}			
+
 
 		readLineSensors();
 	    readContactSwitches();
 	    readIRSensors();
-		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue = 0 
+		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
-			//move forward
+			return forward;
 			_delay_ms(2000);
 		}
-		else (/*check all sensors and return position, push, avoidLine or escape state accordingly*/){
 
+		/*check all sensors and return position, push, avoidLine or escape state accordingly*/
+		
+		else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
+			return avoidLineState;
+		}
+		
+		else if(fContactSensorValue == 1 || bContactSensorValue == 1 || rContactSensorValue == 1 || lContactSensorValue == 1){
+			return pushState;
+		}	
+		
+        else if(frIRSensorValue < 200 || fcIRSensorValue < 200 || flIRSensorValue < 200 
+		   || brIRSensorValue < 200 || bcIRSensorValue < 200 || blIRSensorValue < 200){
+			   return positionState;
+		   }
+		   
+	    else if(lContactSensorValue == 1 && rContactSensorValue ==1){
+			return escapeState;
 		}
 
 		readLineSensors();
 	    readContactSwitches();
 	    readIRSensors();
-		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue = 0 
+		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
 			//turn 120 degrees left
 		}
-		else (/*check all sensors and return position, push, avoidLine or escape state accordingly*/){
-
+		
+		/*check all sensors and return position, push, avoidLine or escape state accordingly*/
+		
+		else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+			return avoidLineState;
+		}
+		
+		else if(fContactSensorValue == 1 || bContactSensorValue == 1 || rContactSensorValue == 1 || lContactSensorValue == 1){
+			return pushState;
+		}	
+		
+        else if(frIRSensorValue < 200 || fcIRSensorValue < 200 || flIRSensorValue < 200 
+		   || brIRSensorValue < 200 || bcIRSensorValue < 200 || blIRSensorValue < 200){
+			   return positionState;
+		   }
+		   
+	    else if(lContactSensorValue == 1 && rContactSensorValue ==1){
+			return escapeState;
 		}
 
 		readLineSensors();
 	    readContactSwitches();
 	    readIRSensors();
-		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue = 0 
+		if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
-			//move forward 
+			return forward; 
 			_delay_ms(2000);
 		}
-		else (/*check all sensors and return position, push, avoidLine or escape state accordingly*/){
+		
+		/*check all sensors and return position, push, avoidLine or escape state accordingly*/
+		
+		else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+			return avoidLineState;
+		}
+		
+		else if(fContactSensorValue == 1 || bContactSensorValue == 1 || rContactSensorValue == 1 || lContactSensorValue == 1){
+			return pushState;
+		}	
+		
+        else if(frIRSensorValue < 200 || fcIRSensorValue < 200 || flIRSensorValue < 200 
+		   || brIRSensorValue < 200 || bcIRSensorValue < 200 || blIRSensorValue < 200){
+			   return positionState;
+		   }
+		   
+	    else if(lContactSensorValue == 1 && rContactSensorValue ==1){
+			return escapeState;
 		}	
 
 		//loop back to beginning of function
 		//too much sensor checking
 		//there must be an easier way to check sensors		
-           
-    }
-        
-        
+               
     }
     
     return 0;
@@ -427,6 +486,7 @@ uint8_t position(){
 	readLineSensors();
 	readContactSwitches();
 	readIRSensors();
+	
 	if (frIRSensorValue < 200){
 		return frontright;
 	}
@@ -438,7 +498,7 @@ uint8_t position(){
 	else if (frIRSensorValue < 200 && flIRSensorValue < 200){
 		return pushState;
 	
-	if (brIRSensorValue < 200){
+	 else if (brIRSensorValue < 200){
 		return backright;
 	}
 	
@@ -449,6 +509,21 @@ uint8_t position(){
 	else if (brIRSensorValue < 200 && blIRSensorValue < 200){
 		return pushState;
 	}
+	
+	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+		return avoidLineState;
+	}
+		
+	else if(rContactSensorValue == 1 || lContactSensorValue == 1){
+		return escapeState;
+	}
+	
+	else if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
+		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
+		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
+		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
+		return scanState;
+	}	
     return 0;
 }
 
@@ -464,56 +539,68 @@ uint8_t push(){
 	readIRSensors();
 
 	if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	//return push back
+	  return backward;
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	//return push back right
+	  return backright;
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	//return push back left
+	  return backleft;
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	//return push back
+	  return backward;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	//return push front
+	  return forward;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	//return push front right
+	  return frontright;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	//return push front left
+	  return frontleft;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	//return push front
+	 return forward;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	//return push front
+	  return forward;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	//return push front right
+	  return frontright;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	//return push front left
+	  return frontleft;
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	//return push front
+	  return forward;
 	}
 	
-	/*if (line sensors activated && contact sensors deactivated){
+	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
 		return avoidLineState;
-	} */
+	}
+		
+	else if(rContactSensorValue == 1 || lContactSensorValue == 1){
+		return escapeState;
+	}
+	
+	else if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
+		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
+		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
+		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
+		return scanState;
+	}
+	
     return 0;
 }
 
@@ -522,18 +609,26 @@ uint8_t escape(){
 	readLineSensors();
 	readContactSwitches();
 	readIRSensors();
-	/*if (line sensors activated &&  rContactSensorValue == 0 && lContactSensorValue == 0){
-		return avoidLineState;
-	} */
 
 	if(rContactSensorValue == 1){
-		//move forward and left
+		return frontleft;
 	}
 	else if(lContactSensorValue == 1){
-		//move forward and right
+		return frontright;
 	}
 	else if(rContactSensorValue == 1 && lContactSensorValue == 1){
-		//move straight forward 
+		return forward;
+	}
+	
+	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+		return avoidLineState;
+	}
+	
+	else if(frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
+		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
+		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
+		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
+		return scanState;
 	}
     return 0;
 }
@@ -544,7 +639,10 @@ uint8_t avoidLine() {
 	readContactSwitches();
 	readIRSensors();
 	
-	if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 0 && brLineSensorValue = 0 ){
+	if (frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0 
+		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
+		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
+		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200 ){
 		return scanState;
 	}
 	
