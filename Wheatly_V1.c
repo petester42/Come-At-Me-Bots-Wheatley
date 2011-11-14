@@ -103,7 +103,6 @@
 #define backleft 5
 #define backright 6
 
-
 //use uint8_t instead of int since it takes less space on the memory
 
 //current state value
@@ -147,20 +146,25 @@ void setup(){
     DDRB |= (0 << fContactSensorDir) | (0 << bContactSensorDir) | (0 << lContactSensorDir); //make contact switch ports input
     PORTB |= (1 << fContactSensorPort) | (1 << bContactSensorPort) | (1 << lContactSensorPort); //enable pull-up resistors
     
-    DDRB |= (1 << PWMSpeakerDir) | (1 << PWMLeftMotorDir) | (1 << PWMRightMotorDir) | (1 << HighLeftMotorDir) | (1 << LowLeftMotorDir) | (1 << HighRightMotorDir) | (1 << LowRightMotorDir); 
+    DDRB |= (1 << PWMSpeakerDir) | (1 << PWMLeftMotorDir) | (1 << PWMRightMotorDir) | (1 << HighLeftMotorDir) | (1 << LowLeftMotorDir) | (1 << HighRightMotorDir) | (1 << LowRightMotorDir); //output
     
     //set up motor PWM
     
-    TCCR1A = 0; 
+    TCCR2 = 0; // Turn all PWM whilst setting up
+    TCCR2 |= (1<<WGM20); // Select 8 bit phase correct with TOP=255
+    TCCR2 |= (1<<CS20); // Select prescaler = 1
+    TCCR2 |= (1<<COM21); // Turn on the PWM channel using non-inverting mode
     
-    TCCR1A |= (1<<WGM13) | (1<<WGM10); // Phase & Frequency Correct PWM
+    //set up sound PWM
     
+    TCCR1A = 0; // Stop all PWM on Timer 1 when setting up
+    TCCR1A |= (1<<WGM13) | (1<<WGM12) | (1<<WGM11); // 16 bit Fast PWM using ICR1 for TOP
     TCCR1B = 0;
+    TCCR1B |= (1<<CS10);  // pre-scaler = 1
+    TCCR1A |= (1<<COM1A1); // enable channel A in non-inverting mode
     
-    TCCR1B = (1 << WGM13) | (1 << CS10); // Phase and Frequency Correct PWM mode, with no prescaling
-    
-    TCCR1A = (1 << COM1A1) | (1 << COM1B1); // enable channel A & B in non-inverting mode
-    
+    ICR1 = 249;  // 4kHz PWM
+    OCR1A = ICR1 / 2; // 50% duty cycle
     
     //??should do the line before for all adc ports
     uint8_t i;
@@ -195,13 +199,14 @@ uint8_t readADC(uint8_t channel) {
 void move (uint8_t direction, uint8_t speed){
     //pierre-marc
     //speed are values from 0-255
-    //OC1A left motor
-    //OC1B right motor
+    //OCR2 is for speed
     
     // HighLeftMotorPort PORTD7 //1A
     // LowLeftMotorPort PORTB0 //2A
     // HighRightMotorPort PORTD6 //4A
     // LowRightMotorPort PORTD5 //3A
+    
+    OCR2 = speed;
     
     switch (direction) {
             
@@ -211,9 +216,6 @@ void move (uint8_t direction, uint8_t speed){
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (1 << LowRightMotorPort);
             
-            OCR1A = speed;
-            OCR1B = speed;
-            
             break;
             
         case backward:
@@ -222,9 +224,6 @@ void move (uint8_t direction, uint8_t speed){
             PORTD | = (1 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
             
-            OCR1A = speed;
-            OCR1B = speed;
-            
             break;
             
         case frontleft:
@@ -232,10 +231,7 @@ void move (uint8_t direction, uint8_t speed){
             PORTB | = (0 << LowLeftMotorPort);
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (1 << LowRightMotorPort);
-            
-            OCR1A = speed;
-            OCR1B = 0;
-            
+           
             break;
             
         case frontright:
@@ -243,10 +239,7 @@ void move (uint8_t direction, uint8_t speed){
             PORTB | = (1 << LowLeftMotorPort);
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
-            
-            OCR1A = 0;
-            OCR1B = speed;
-            
+           
             break;
             
         case backleft:
@@ -255,9 +248,6 @@ void move (uint8_t direction, uint8_t speed){
             PORTD | = (1 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
             
-            OCR1A = speed;
-            OCR1B = 0;
-            
             break;
             
         case backright:
@@ -265,10 +255,7 @@ void move (uint8_t direction, uint8_t speed){
             PORTB | = (0 << LowLeftMotorPort);
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
-            
-            OCR1A = 0;
-            OCR1B = speed;
-            
+                    
             break;
             
         case brake:
@@ -276,10 +263,7 @@ void move (uint8_t direction, uint8_t speed){
             PORTB | = (0 << LowLeftMotorPort);
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
-            
-            OCR1A = 0;
-            OCR1B = 0;
-            
+           
             break;
             
         default:
@@ -287,9 +271,6 @@ void move (uint8_t direction, uint8_t speed){
             PORTB | = (0 << LowLeftMotorPort);
             PORTD | = (0 << HighRightMotorPort);
             PORTD | = (0 << LowRightMotorPort);
-            
-            OCR1A = 0;
-            OCR1B = 0;
             
             break;
     }
