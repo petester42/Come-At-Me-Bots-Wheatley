@@ -11,6 +11,7 @@
 #include <avr/interrupt.h>
 #include <inttypes.h>
 #include <util/delay.h>
+//#include "notes.h"
 
 #define TRUE 1
 #define FALSE 0
@@ -103,6 +104,10 @@
 #define backleft 5
 #define backright 6
 
+//#define DEFAULT_VOLUME 100
+const int distance[] = {1,2,3,4,5,6,7}; //look up table for distances
+const int triangle[] = {5,10,15,20,25,30,35}; //look up table for trangle sides
+
 //use uint8_t instead of int since it takes less space on the memory
 
 //current state value
@@ -163,8 +168,8 @@ void setup(){
     TCCR1B |= (1<<CS10);  // pre-scaler = 1
     TCCR1A |= (1<<COM1A1); // enable channel A in non-inverting mode
     
-    ICR1 = 249;  // 4kHz PWM
-    OCR1A = ICR1 / 2; // 50% duty cycle
+    //    ICR1 = 249;  // 4kHz PWM
+    //    OCR1A = ICR1 / 2; // 50% duty cycle
     
     //??should do the line before for all adc ports
     uint8_t i;
@@ -211,66 +216,66 @@ void move (uint8_t direction, uint8_t speed){
     switch (direction) {
             
         case forward:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (1 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (1 << LowRightMotorPort);
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (1 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (1 << LowRightMotorPort);
             
             break;
             
         case backward:
-            PORTD | = (1 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (1 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
+            PORTD |= (1 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (1 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
             
             break;
             
         case frontleft:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (1 << LowRightMotorPort);
-           
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (1 << LowRightMotorPort);
+            
             break;
             
         case frontright:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (1 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
-           
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (1 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
+            
             break;
             
         case backleft:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (1 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (1 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
             
             break;
             
         case backright:
-            PORTD | = (1 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
-                    
+            PORTD |= (1 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
+            
             break;
             
         case brake:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
-           
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
+            
             break;
             
         default:
-            PORTD | = (0 << HighLeftMotorPort);
-            PORTB | = (0 << LowLeftMotorPort);
-            PORTD | = (0 << HighRightMotorPort);
-            PORTD | = (0 << LowRightMotorPort);
+            PORTD |= (0 << HighLeftMotorPort);
+            PORTB |= (0 << LowLeftMotorPort);
+            PORTD |= (0 << HighRightMotorPort);
+            PORTD |= (0 << LowRightMotorPort);
             
             break;
     }
@@ -283,6 +288,12 @@ void readLineSensors(){
     flLineSensorValue = flLineSensorPin;
     brLineSensorValue = brLineSensorPin;
     blLineSensorValue = blLineSensorPin;
+	
+    /*frLineSensorValue = 0;
+     flLineSensorValue = 0;
+     brLineSensorValue = 0;
+     blLineSensorValue = 0;
+     */
 }
 
 void readContactSwitches(){
@@ -292,6 +303,11 @@ void readContactSwitches(){
     lContactSensorValue = lContactSensorPin;
     rContactSensorValue = rContactSensorPin;
     
+	/*fContactSensorValue = 0;
+     bContactSensorValue = 0;
+     lContactSensorValue = 0;
+     rContactSensorValue = 0;
+     */
 }
 
 void readIRSensors(){
@@ -303,6 +319,13 @@ void readIRSensors(){
     bcIRSensorValue = readADC(bcIRSensor);
     blIRSensorValue = readADC(blIRSensor);
     
+    /*frIRSensorValue = 200;
+     fcIRSensorValue = 200;
+     flIRSensorValue = 200;
+     brIRSensorValue = 0;
+     bcIRSensorValue = 200;
+     blIRSensorValue = 0;
+     */
 }
 
 void initialize(){
@@ -321,7 +344,7 @@ uint8_t scan(){
          }
          */
         
-        
+        return flankState;
     }
     
     return 0;
@@ -334,7 +357,209 @@ uint8_t position(){
 
 uint8_t flank(){
     //pierre-marc
+    
+    uint8_t isFront = 0;
+    uint8_t isMoveing = 0;
+    uint8_t moveState = 0;
+    uint8_t checkIR = 1;
+    uint8_t duration;
+    uint8_t i;
+    
+    while (TRUE) {
+        
+        readLineSensors();
+        
+        if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1) {
+            return avoidLineState;
+        }
+        
+        readContactSwitches();
+        
+        if (rContactSensorValue == 1 || lContactSensorValue == 1) {
+            return escapeState;
+        }
+        
+        else if (fContactSensorValue == 1 || bContactSensorValue == 1){
+            return pushState; 
+        }
+        
+        if (checkIR == 1) {
+            
+            readIRSensors();
+            
+			if (fcIRSensorValue < 100) { //values changed after testing
+                //front sensor not in range
+                
+                if (flIRSensorValue < 100 && frIRSensorValue < 100) { //values changed after testing
+                    return scanState; //not visible anymore
+                }
+                
+                /*else { //values changed after testing
+                 return positionState;
+                 }*/
+                
+                return positionState;
+            }    
+            
+			else {
+            	isFront = 1;
+			}
+            
+			if (isFront == 0){
+                if (bcIRSensorValue < 100) { //values changed after testing
+                    //front sensor not in range
+                    
+                    if (blIRSensorValue < 100 && brIRSensorValue < 100) { //values changed after testing
+                        return scanState; //not visible anymore
+                    }
+                    
+                    /*else { //values changed after testing
+                     return positionState;
+                     }*/
+                    
+                    return positionState;
+                }
+                
+                
+                else {
+                    isFront = 0;
+                    
+                }
+            }
+            
+        }
+        
+        if (isFront == 1) {
+            
+            if (isMoveing == 0) { //not moving
+                
+                if (moveState == 0) {
+					duration = 255/distance[0];
+      			  	i = duration;
+                    checkIR = 0;
+                    move(frontright,255); //turn to 45 deg.
+                    _delay_ms(300);
+                    move(brake,0);
+                    moveState = 1;
+                }
+                
+                else if (moveState == 1){
+                    isMoveing = 1;
+                    move(forward,255); //go forward
+                }
+                
+                else if (moveState == 2){
+                    move(frontleft,255); 
+                    _delay_ms(1000); //turn 90 deg.
+                    move(brake,0);
+                    moveState = 3;
+                    checkIR = 1;
+                }
+                
+                else if (moveState == 3){
+                    isMoveing = 1;
+                    move(forward,255); //go forward
+                }
+            }
+            
+            else {
+                
+                if (moveState == 1) {
+                    if (i == 0) {
+                        move(brake,0);
+                        isMoveing = 0;
+                        moveState = 2;
+                    }
+                    
+                    else {
+                        i--;
+                        
+                    }
+                }
+                
+                /*else if (moveState == 3){
+                 if (i == duration) {
+                 move(brake,0);
+                 isMoveing = 0;
+                 moveState = 3;
+                 }
+                 
+                 else {
+                 i++;
+                 
+                 }
+                 }*/
+            }
+            
+        }
+        
+        else {
+            
+            if (isMoveing == 0) { //not moving
+                
+                if (moveState == 0) {
+					duration = 255/distance[0];
+      			  	i = duration;
+                    checkIR = 0;
+                    move(backright,255); //turn to 45 deg.
+                    _delay_ms(300);
+                    move(brake,0);
+                    moveState = 1;
+                }
+                
+                else if (moveState == 1){
+                    isMoveing = 1;
+                    move(backward,255); //go forward
+                }
+                
+                else if (moveState == 2){
+                    move(backleft,255); 
+                    _delay_ms(1000); //turn 90 deg.
+                    move(brake,0);
+                    moveState = 3;
+                    checkIR = 1;
+                }
+                
+                else if (moveState == 3){
+                    isMoveing = 1;
+                    move(backward,255); //go forward
+                }
+            }
+            
+            else {
+                
+                if (moveState == 1) {
+                    if (i == 0) {
+                        move(brake,0);
+                        isMoveing = 0;
+                        moveState = 2;
+                    }
+                    
+                    else {
+                        i--;
+                        
+                    }
+                }
+                
+                /* else if (moveState == 3){
+                 if (i == duration) {
+                 move(brake,0);
+                 isMoveing = 0;
+                 moveState = 3;
+                 }
+                 
+                 else {
+                 i++;
+                 
+                 }
+                 }*/
+            }
+        }
+        
+    }    
+    
     return 0;
+    
 }
 
 uint8_t push(){
