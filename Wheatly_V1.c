@@ -333,7 +333,7 @@ void initialize(){
 	while(TRUE){
     if (frLineSensorValue == 0 || flLineSensorValue == 0 || brLineSensorValue == 0 || blLineSensorValue == 0){
 		//move backwards
-		return backward;
+		move(backward,255);
 	}
 			
 	else if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
@@ -390,7 +390,7 @@ uint8_t scan(){
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
-			return forward;
+			move(forward,255);
 			_delay_ms(2000);
 		}
 
@@ -449,7 +449,7 @@ uint8_t scan(){
 		   && fContactSensorValue == 0 && bContactSensorValue == 0 && rContactSensorValue == 0 && lContactSensorValue == 0
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
-			return forward; 
+			move(forward,255); 
 			_delay_ms(2000);
 		}
 		
@@ -488,22 +488,22 @@ uint8_t position(){
 	readIRSensors();
 	
 	if (frIRSensorValue < 200){
-		return frontright;
+		move(frontright,255);
 	}
 	
 	else if (flIRSensorValue < 200){
-		return frontleft;
+		move(frontleft,255);
 	}	
 
 	else if (frIRSensorValue < 200 && flIRSensorValue < 200){
 		return pushState;
 	
 	 else if (brIRSensorValue < 200){
-		return backright;
+		move(backright,255);
 	}
 	
 	else if (brIRSensorValue < 200){
-		return backleft;
+		move(backleft,255);
 	}	
 
 	else if (brIRSensorValue < 200 && blIRSensorValue < 200){
@@ -539,51 +539,51 @@ uint8_t push(){
 	readIRSensors();
 
 	if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	  return backward;
+	  move(backward,255);
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	  return backright;
+	  move(backright,255);
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	  return backleft;
+	  move(backleft,255);
 	}
 	
 	else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	  return backward;
+	  move(backward,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	  return forward;
+	  move(forward,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	  return frontright;
+	  move(frontright,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	  return frontleft;
+	  move(frontleft,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	 return forward;
+	 move(forward,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 0){
-	  return forward;
+	  move(forward,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 1){
-	  return frontright;
+	  move(frontright,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 0){
-	  return frontleft;
+	  move(frontleft,255);
 	}
 	
 	else if(fContactSensorValue == 1 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 1){
-	  return forward;
+	  move(forward,255);
 	}
 	
 	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
@@ -614,10 +614,10 @@ uint8_t escape(){
 		return frontleft;
 	}
 	else if(lContactSensorValue == 1){
-		return frontright;
+		move(frontright,255);
 	}
 	else if(rContactSensorValue == 1 && lContactSensorValue == 1){
-		return forward;
+		move(forward,255);
 	}
 	
 	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
@@ -647,35 +647,35 @@ uint8_t avoidLine() {
 	}
 	
 	else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 0 && brLineSensorValue = 1 ){
-		return frontleft;
+		move(frontleft,255);
 	}
 	
 	else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue = 0 ){
-		return frontright;
+		move(frontright,255);
 	}
 	
 	else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue = 1 ){
-		return forward;
+		move(forward,255);
 	}
 	
 	else if (flLineSensorValue == 0 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue = 0 ){
-		return backleft;
+		move(backleft,255);
 	}
 	
 	else if (flLineSensorValue == 0 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue = 1 ){
-		return frontleft;
+		move(frontleft,255);
 	}
 	
 	else if (flLineSensorValue == 1 && frLineSensorValue == 0 && blLineSensorValue == 0 && brLineSensorValue = 0 ){
-		return backright;
+		move(backright,255);
 	}
 	
 	else if (flLineSensorValue == 1 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue = 0 ){
-		return frontright;
+		move(frontright,255);
 	}
 	
 	else if (flLineSensorValue == 1 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue = 0 ){
-		return backward;
+		move(backward,255);
 	}
 	
 	
