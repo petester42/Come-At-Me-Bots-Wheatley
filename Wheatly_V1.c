@@ -344,9 +344,9 @@ void initialize(){
 		//move away from line
 		return avoidLineState;
 		_delay_ms(2000);
+		return scanState;
 	}
-	return scanState;
-	}	
+	
 	return 0;
 }
 
@@ -507,8 +507,8 @@ uint8_t position(){
 	}	
 
 	/*else if (brIRSensorValue < 200 && blIRSensorValue < 200){
-		return pushState; */
-	}
+		return pushState; 
+	} */
 
 	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
 		return avoidLineState;
@@ -842,10 +842,10 @@ uint8_t escape(){
 
 uint8_t avoidLine() {
     //fawzi
-	uint8_t tempflLine == 0;
-	uint8_t tempfrLine == 0;
-	uint8_t tempblLine == 0;
-	uint8_t tempbrLine == 0;
+	uint8_t tempflLine = 0;
+	uint8_t tempfrLine = 0;
+	uint8_t tempblLine = 0;
+	uint8_t tempbrLine = 0;
 	
 	readLineSensors();
 	readContactSwitches();
