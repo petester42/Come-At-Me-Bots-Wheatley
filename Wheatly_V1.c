@@ -335,7 +335,7 @@ void initialize(){
 	readIRSensors();
         
 	while(TRUE){
-    if (frLineSensorValue == 0 || flLineSensorValue == 0 || brLineSensorValue == 0 || blLineSensorValue == 0){
+    if (frLineSensorValue == 0 && flLineSensorValue == 0 && brLineSensorValue == 0 && blLineSensorValue == 0){
 		//move backwards
 		move(backward,255);
 	}
@@ -345,6 +345,8 @@ void initialize(){
 		return avoidLineState;
 		_delay_ms(2000);
 	}
+	return scanState;
+	}	
 	return 0;
 }
 
@@ -360,11 +362,6 @@ uint8_t scan(){
 		   && frIRSensorValue > 200 && fcIRSensorValue > 200 && flIRSensorValue > 200 
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
 			//turn 60 degrees right
-			/*move forward
-			_delay_ms(2000);
-			//turn 120 degrees left
-			//move forward
-			_delay_ms(2000); */
 		}
 
 		/*check all sensors and return position, push, avoidLine or escape state accordingly*/
@@ -475,7 +472,8 @@ uint8_t scan(){
 	    else if(lContactSensorValue == 0 && rContactSensorValue == 0){
 			return escapeState;
 		}	
-
+        
+		// Also, return winningOutputState;
 		//loop back to beginning of function
 		//too much sensor checking
 		//there must be an easier way to check sensors		
@@ -497,8 +495,8 @@ uint8_t position(){
 		move(frontleft,255);
 	}	
 
-	else if (frIRSensorValue < 200 && flIRSensorValue < 200){
-		return pushState;
+	/*else if (frIRSensorValue < 200 && flIRSensorValue < 200){
+		return pushState; */
 
 	 else if (brIRSensorValue < 200){
 		move(backright,255);
@@ -508,8 +506,8 @@ uint8_t position(){
 		move(backleft,255);
 	}	
 
-	else if (brIRSensorValue < 200 && blIRSensorValue < 200){
-		return pushState;
+	/*else if (brIRSensorValue < 200 && blIRSensorValue < 200){
+		return pushState; */
 	}
 
 	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
@@ -526,6 +524,8 @@ uint8_t position(){
 		   && brIRSensorValue > 200 && bcIRSensorValue > 200 && blIRSensorValue > 200){
 		return scanState;
 	}	
+	
+	// Also, return flankState;
     return 0;
 }
 
@@ -814,7 +814,7 @@ uint8_t escape(){
 	readIRSensors();
 
 	if(rContactSensorValue == 0){
-		return frontleft;
+		move(frontleft,255);
 	}
 	else if(lContactSensorValue == 0){
 		move(frontright,255);
@@ -823,7 +823,11 @@ uint8_t escape(){
 		move(forward,255);
 	}
 
-	else if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
+	readLineSensors();
+	readContactSwitches();
+	readIRSensors();
+	
+	if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue = 1){
 		return avoidLineState;
 	}
 
