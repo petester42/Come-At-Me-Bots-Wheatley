@@ -84,6 +84,9 @@
 #define LowRightMotorPort PORTD5 //3A
 #define LowRightMotorDir DDD5
 
+#define resetPort PORTC6
+#define resetDir DDC6
+
 //states
 #define scanState 1
 #define positionState 2
@@ -103,6 +106,9 @@
 #define frontright 4
 #define backleft 5
 #define backright 6
+
+//return to ring array
+int returnToRingArray[] = {0,0,0,0};
 
 //#define DEFAULT_VOLUME 100
 const int distance[] = {1,2,3,4,5,6,7}; //look up table for distances
@@ -130,10 +136,10 @@ uint8_t brLineSensorValue = 0;
 uint8_t blLineSensorValue = 0;
 
 //value that contact sensor reads
-uint8_t fContactSensorValue = 0;
-uint8_t bContactSensorValue = 0;
-uint8_t rContactSensorValue = 0;
-uint8_t lContactSensorValue = 0;
+uint8_t fContactSensorValue = 1;
+uint8_t bContactSensorValue = 1;
+uint8_t rContactSensorValue = 1;
+uint8_t lContactSensorValue = 1;
 
 //values to store the adc values and the pin values
 
@@ -142,18 +148,27 @@ void setup(){
     //adc
     //interrupts
     
-    DDRD |= (0 << flLineSensorDir) | (0 << frLineSensorDir) | (0 << blLineSensorDir) | (0 << brLineSensorDir);//make line sensor ports input
-    PORTD |= (0 << flLineSensorPort) | (0 << frLineSensorPort) | (0 << blLineSensorPort) | (0 << brLineSensorPort);//dont enable pull up resistors
+    DDRD &= ~(1 << flLineSensorDir) & ~(1 << frLineSensorDir) & ~(1 << blLineSensorDir) & ~(1 << brLineSensorDir);//make line sensor ports input
+    PORTD &= ~(1 << flLineSensorPort) & ~(1 << frLineSensorPort) & ~(1 << blLineSensorPort) & ~(1 << brLineSensorPort);//dont enable pull up resistors
     
-    DDRD |= (0 << rContactSensorDir); //make contact switch ports input
+    DDRD &= ~(1 << rContactSensorDir); //make contact switch ports input
     PORTD |= (1 << rContactSensorPort); //enable pull-up resisitors
     
-    DDRB |= (0 << fContactSensorDir) | (0 << bContactSensorDir) | (0 << lContactSensorDir); //make contact switch ports input
+    DDRC &= ~(1 << resetDir); //make reset input
+    PORTC |= (1<< resetPort); //enabel pull-up resistor
+    
+    DDRB &= ~(1 << fContactSensorDir) & ~(1 << bContactSensorDir) & ~(1 << lContactSensorDir); //make contact switch ports input
     PORTB |= (1 << fContactSensorPort) | (1 << bContactSensorPort) | (1 << lContactSensorPort); //enable pull-up resistors
     
-    DDRB |= (1 << PWMSpeakerDir) | (1 << PWMLeftMotorDir) | (1 << PWMRightMotorDir) | (1 << HighLeftMotorDir) | (1 << LowLeftMotorDir) | (1 << HighRightMotorDir) | (1 << LowRightMotorDir); //output
+    DDRB |= (1 << PWMSpeakerDir) | (1 << PWMLeftMotorDir) | (1 << PWMRightMotorDir) | (1 << LowLeftMotorDir); //output
+    DDRD |= (1 << HighLeftMotorDir) | (1 << LowRightMotorDir) | (1 << HighRightMotorDir);
     
-    //set up motor PWM
+    PORTD &= ~(1 << HighLeftMotorPort);
+    PORTB &= ~(1 << LowLeftMotorPort);
+    PORTD &= ~(1 << HighRightMotorPort);
+    PORTD &= ~(1 << LowRightMotorPort);
+    
+	//set up motor PWM
     
     TCCR2 = 0; // Turn all PWM whilst setting up
     TCCR2 |= (1<<WGM20); // Select 8 bit phase correct with TOP=255
@@ -215,67 +230,67 @@ void move (uint8_t direction, uint8_t speed){
     
     switch (direction) {
             
-        case forward:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (1 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (1 << LowRightMotorPort);
-            
-            break;
-            
         case backward:
-            PORTD |= (1 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (1 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB |= (1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD |= (1 << LowRightMotorPort);
             
             break;
             
-        case frontleft:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (1 << LowRightMotorPort);
+        case forward:
+            PORTD |= (1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD |= (1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
         case frontright:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (1 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD |= (1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
-        case backleft:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (1 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+        case frontleft:
+            PORTD |= (1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
         case backright:
-            PORTD |= (1 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD |= (1 << LowRightMotorPort);
+            
+            break;
+            
+        case backleft:
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB |= (1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
         case brake:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
         default:
-            PORTD |= (0 << HighLeftMotorPort);
-            PORTB |= (0 << LowLeftMotorPort);
-            PORTD |= (0 << HighRightMotorPort);
-            PORTD |= (0 << LowRightMotorPort);
+            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD &= ~(1 << LowRightMotorPort);
             
             break;
     }
@@ -284,30 +299,97 @@ void move (uint8_t direction, uint8_t speed){
 
 void readLineSensors(){
     
-    frLineSensorValue = frLineSensorPin;
-    flLineSensorValue = flLineSensorPin;
-    brLineSensorValue = brLineSensorPin;
-    blLineSensorValue = blLineSensorPin;
-	
-    /*frLineSensorValue = 0;
-     flLineSensorValue = 0;
-     brLineSensorValue = 0;
-     blLineSensorValue = 0;
+    /* frLineSensorValue = frLineSensorPin;
+     flLineSensorValue = flLineSensorPin;
+     brLineSensorValue = brLineSensorPin;
+     blLineSensorValue = blLineSensorPin;
      */
+    
+    if (CHECKBIT(PIND,frLineSensorPin)) {
+        frLineSensorValue = 1;
+    }
+    
+    else {
+        frLineSensorValue = 0; 
+    }
+    
+    if (CHECKBIT(PIND,flLineSensorPin)) {
+        flLineSensorValue = 1;
+    }
+    
+    else {
+        flLineSensorValue = 0; 
+    }
+    
+    if (CHECKBIT(PIND,brLineSensorPin)) {
+        brLineSensorValue = 1;
+    }
+    
+    else {
+        brLineSensorValue = 0; 
+    }
+    
+    if (CHECKBIT(PIND,blLineSensorPin)) {
+        blLineSensorValue = 1;
+    }
+    
+    else {
+        blLineSensorValue = 0; 
+    }
+    
+    frLineSensorValue = 0;
+    flLineSensorValue = 0;
+    brLineSensorValue = 0;
+    blLineSensorValue = 0;
+    
 }
 
 void readContactSwitches(){
+    //active low, switch on is 0, off is 1
     
-    fContactSensorValue = fContactSensorPin;
-    bContactSensorValue = bContactSensorPin;
-    lContactSensorValue = lContactSensorPin;
-    rContactSensorValue = rContactSensorPin;
-    
-	/*fContactSensorValue = 0;
-     bContactSensorValue = 0;
-     lContactSensorValue = 0;
-     rContactSensorValue = 0;
+    /*fContactSensorValue = fContactSensorPin;
+     bContactSensorValue = bContactSensorPin;
+     lContactSensorValue = lContactSensorPin;
+     rContactSensorValue = rContactSensorPin;
      */
+    
+    if (CHECKBIT(PINB,fContactSensorPin)) {
+        fContactSensorValue = 0;
+    }
+    
+    else {
+        fContactSensorValue = 1;
+    }
+    
+    if (CHECKBIT(PINB,bContactSensorPin)) {
+        bContactSensorValue = 0;
+    }
+    
+    else {
+        bContactSensorValue = 1; 
+    }
+    
+    if (CHECKBIT(PINB,lContactSensorPin)) {
+        lContactSensorValue = 0;
+    }
+    
+    else {
+        lContactSensorValue = 1; 
+    }
+    
+    if (CHECKBIT(PIND,rContactSensorPin)) {
+        rContactSensorValue = 0;
+    }
+    
+    else {
+        rContactSensorValue = 1; 
+    }
+    
+	fContactSensorValue = 0;
+    bContactSensorValue = 0;
+    lContactSensorValue = 0;
+    rContactSensorValue = 0;
+    
 }
 
 void readIRSensors(){
@@ -319,13 +401,15 @@ void readIRSensors(){
     bcIRSensorValue = readADC(bcIRSensor);
     blIRSensorValue = readADC(blIRSensor);
     
-    /*frIRSensorValue = 200;
-     fcIRSensorValue = 200;
-     flIRSensorValue = 200;
-     brIRSensorValue = 0;
-     bcIRSensorValue = 200;
-     blIRSensorValue = 0;
-     */
+	fcIRSensorValue = 300;
+	
+    frIRSensorValue = 0;
+    //fcIRSensorValue = 0;
+    flIRSensorValue = 0;
+    brIRSensorValue = 0;
+    bcIRSensorValue = 0;
+    blIRSensorValue = 0;
+    
 }
 
 void initialize(){
@@ -361,25 +445,29 @@ uint8_t flank(){
     uint8_t isFront = 0;
     uint8_t isMoveing = 0;
     uint8_t moveState = 0;
-    uint8_t checkIR = 1;
-    uint8_t duration;
-    uint8_t i;
+    uint8_t checkIR = 0;
+    uint8_t duration = 0;
+    uint8_t counter = 0;
     
     while (TRUE) {
-        
+		
         readLineSensors();
         
         if (frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1) {
+			
             return avoidLineState;
         }
         
         readContactSwitches();
         
-        if (rContactSensorValue == 1 || lContactSensorValue == 1) {
+        if (rContactSensorValue == 0 || lContactSensorValue == 0) {
+			
+            
             return escapeState;
         }
         
-        else if (fContactSensorValue == 1 || bContactSensorValue == 1){
+        if (fContactSensorValue == 0 || bContactSensorValue == 0){
+			
             return pushState; 
         }
         
@@ -391,6 +479,7 @@ uint8_t flank(){
                 //front sensor not in range
                 
                 if (flIRSensorValue < 100 && frIRSensorValue < 100) { //values changed after testing
+					
                     return scanState; //not visible anymore
                 }
                 
@@ -398,10 +487,12 @@ uint8_t flank(){
                  return positionState;
                  }*/
                 
+				
                 return positionState;
             }    
             
 			else {
+				move(frontright,120);
             	isFront = 1;
 			}
             
@@ -410,6 +501,7 @@ uint8_t flank(){
                     //front sensor not in range
                     
                     if (blIRSensorValue < 100 && brIRSensorValue < 100) { //values changed after testing
+                        
                         return scanState; //not visible anymore
                     }
                     
@@ -434,11 +526,11 @@ uint8_t flank(){
             if (isMoveing == 0) { //not moving
                 
                 if (moveState == 0) {
-					duration = 255/distance[0];
-      			  	i = duration;
+					duration = distance[0]/10;
+      			  	counter = duration;
                     checkIR = 0;
                     move(frontright,255); //turn to 45 deg.
-                    _delay_ms(300);
+                    _delay_ms(500);
                     move(brake,0);
                     moveState = 1;
                 }
@@ -465,14 +557,14 @@ uint8_t flank(){
             else {
                 
                 if (moveState == 1) {
-                    if (i == 0) {
+                    if (counter == 0) {
                         move(brake,0);
                         isMoveing = 0;
                         moveState = 2;
                     }
                     
                     else {
-                        i--;
+                        counter--;
                         
                     }
                 }
@@ -499,10 +591,10 @@ uint8_t flank(){
                 
                 if (moveState == 0) {
 					duration = 255/distance[0];
-      			  	i = duration;
+      			  	counter = duration;
                     checkIR = 0;
                     move(backright,255); //turn to 45 deg.
-                    _delay_ms(300);
+                    _delay_ms(500);
                     move(brake,0);
                     moveState = 1;
                 }
@@ -529,14 +621,14 @@ uint8_t flank(){
             else {
                 
                 if (moveState == 1) {
-                    if (i == 0) {
+                    if (counter == 0) {
                         move(brake,0);
                         isMoveing = 0;
                         moveState = 2;
                     }
                     
                     else {
-                        i--;
+                        counter--;
                         
                     }
                 }
@@ -579,6 +671,22 @@ uint8_t avoidLine() {
 
 uint8_t returnToRing() {
     //pierre-marc
+    
+    /* uint8_t firstValue = *returnToRingArray;
+     uint8_t secondValue = *(returnToRingArray + 1);
+     uint8_t thirdValue = *(returnToRingArray + 2);
+     uint8_t fourthValue = *(returnToRingArray + 3);
+     */
+    uint8_t counter2;
+    
+    for (counter2 = 0; counter2 < 50000; counter2++) {
+        readLineSensors();
+        
+        
+    }
+    
+    return losingOutputState;
+    
     return 0;
 }
 
@@ -597,9 +705,11 @@ uint8_t winningOutput() {
 int main(){
     
     setup(); //setting up the ports
-    _delay_ms(5000); //wait state
+    // _delay_ms(5000); //wait state
     initialize(); //initialize state
     
+	//move(forward,255);
+	
     while (TRUE) {
         
         switch (state) {
