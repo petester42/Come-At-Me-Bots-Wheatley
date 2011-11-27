@@ -1703,13 +1703,6 @@ int main(){
     setup(); //setting up the ports
     _delay_ms(5000); //wait state
     initialize(); //initialize states
-	
-	while (TRUE){
-		state = winningOutput();
-		_delay_ms(1000);
-		state = losingOutput();
-		_delay_ms(1000);	
-	}
     
     while (TRUE) {
         
