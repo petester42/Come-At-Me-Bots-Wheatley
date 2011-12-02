@@ -113,10 +113,6 @@ int returnToRingArray[] = {0,0,0,0};
 const int distance[] = {1,2,3,4,5,6,7}; //look up table for distances
 const int triangle[] = {5,10,15,20,25,30,35}; //look up table for trangle sides
 
-//#include "notes.h"
-
-/// Default volume, value assigned to OCR1B
-#define DEFAULT_VOLUME 100
 
 //current state value
 uint8_t state = 0;
@@ -153,6 +149,16 @@ int numberOfMS = 0;
 uint8_t isFront = 0;
 int distanceInMS = 0;
 //values to store the adc values and the pin values
+#define IRSENSORVALUE 70
+uint8_t initial = 0;
+int winTime = 0;
+uint8_t winCount = 0;
+uint8_t turn = 0;
+uint8_t pushCountState = 0;
+int pushCount = 0;
+int avoidCount = 0;
+uint8_t avoidCountState = 0;
+#define avoidLineTime 500
 
 void setup(){
     //set up the DDR
@@ -254,13 +260,13 @@ void move (uint8_t direction, uint8_t speed){
             PORTD |= (1 << HighLeftMotorPort);
             PORTB &= ~(1 << LowLeftMotorPort);
             PORTD &= ~(1 << HighRightMotorPort);
-            PORTD &= ~(1 << LowRightMotorPort);
+            PORTD |= (1 << LowRightMotorPort);
             
             break;
             
         case frontright:
             PORTD &= ~(1 << HighLeftMotorPort);
-            PORTB &= ~(1 << LowLeftMotorPort);
+            PORTB |= (1 << LowLeftMotorPort);
             PORTD |= (1 << HighRightMotorPort);
             PORTD &= ~(1 << LowRightMotorPort);
             
@@ -269,13 +275,13 @@ void move (uint8_t direction, uint8_t speed){
         case backleft:
             PORTD &= ~(1 << HighLeftMotorPort);
             PORTB |= (1 << LowLeftMotorPort);
-            PORTD &= ~(1 << HighRightMotorPort);
+            PORTD |= (1 << HighRightMotorPort);
             PORTD &= ~(1 << LowRightMotorPort);
             
             break;
             
         case backright:
-            PORTD &= ~(1 << HighLeftMotorPort);
+            PORTD |= (1 << HighLeftMotorPort);
             PORTB &= ~(1 << LowLeftMotorPort);
             PORTD &= ~(1 << HighRightMotorPort);
             PORTD |= (1 << LowRightMotorPort);
@@ -372,7 +378,6 @@ void readContactSwitches(){
         rContactSensorValue = 1; 
     }
     
-    
 }
 
 void readIRSensors(){
@@ -383,7 +388,6 @@ void readIRSensors(){
     brIRSensorValue = readADC(brIRSensor);
     bcIRSensorValue = readADC(bcIRSensor);
     blIRSensorValue = readADC(blIRSensor);
-    
     
 }
 
@@ -399,8 +403,10 @@ void initialize(){
             move(backward,255);
 			isFront = 0;
             _delay_ms(1000);
-            move(brake,0);
-            
+			move(backright,255);
+			_delay_ms(400);
+            move(brake,255);
+            initial = 1;
             break;
         }
         
@@ -408,7 +414,10 @@ void initialize(){
 			move(forward,255);
 			isFront = 1;
             _delay_ms(1000);
-            move(brake,0);
+			move(frontleft,255);
+			_delay_ms(400);
+            move(brake,255);
+			initial = 1;
 			break;
 		}
         
@@ -431,41 +440,60 @@ void stopTimer(){
 
 ISR(TIMER0_OVF_vect){
     
-	numberOfMS += 1;
+	if(scanMoveState == 1){
+		numberOfMS += 1;
+	}
+	
+	if (pushCountState == 1){
+		pushCount += 1;
+	}
+	
+	if (winCount == 1){
+        winTime += 1;
+	}
+	
+	/*if (avoidCountState == 1)
+     {
+     avoidCount += 1;
+     }*/
+	
+    //	numberOfMS += 1;
+	// winTime += 1;
+    //	pushCount += 1;
     
-	if (scanMove == 1 && numberOfMS == 300){
+	if (scanMove == 1 && numberOfMS == 150){
 		scanMove = 2;
 		scanMoveState = 0;
 		numberOfMS = 0;
-		stopTimer();
+		//stopTimer();
 	}
     
-	else if (scanMove == 2 && numberOfMS == 800){
+	else if (scanMove == 2 && numberOfMS == 300){
 		scanMove = 3;
 		scanMoveState = 0;
 		numberOfMS = 0;
-		stopTimer();
+		//stopTimer();
 	}
     
-	else if (scanMove == 3 && numberOfMS == 600){
+	else if (scanMove == 3 && numberOfMS == 300){
 		scanMove = 4;
 		scanMoveState = 0;
 		numberOfMS = 0;
-		stopTimer();
+		//stopTimer();
 	}
     
-	else if (scanMove == 4 && numberOfMS == 800){
+	else if (scanMove == 4 && numberOfMS == 300){
 		scanMove = 5;
 		scanMoveState = 0;
 		numberOfMS = 0;
-		stopTimer();
+        //	stopTimer();
 	}
     
-	else if (scanMove == 5 && numberOfMS == 600){
+	else if (scanMove == 5 && numberOfMS == 300){
 		scanMove = 2;
 		scanMoveState = 0;
 		numberOfMS = 0;
-		stopTimer();
+        //	stopTimer();
 	}
     
 	if (flankMoveState == 1 && numberOfMS == distanceInMS){
@@ -473,8 +501,21 @@ ISR(TIMER0_OVF_vect){
 		flankMove = 0;
 		distanceInMS = 0;
 		numberOfMS = 0;
-		stopTimer();
+        //	stopTimer();
 	}
+	
+	if (winCount == 1 && winTime == 5000){
+		winCount = 0;
+		//stopTimer();
+	}
+	
+	if (pushCountState == 1 && pushCount == 2500){
+		pushCountState = 0;
+	}
+	
+	/*if (avoidCountState == 1 && avoidCount == avoidLineTime){
+     avoidCountState = 0;
+     }*/
     
 }
 
@@ -482,34 +523,77 @@ uint8_t scan(){
     //done
 	scanMoveState = 0;
 	numberOfMS = 0;
-	scanMove = 1;	
+	pushCount = 0;
+	pushCountState = 0;
+    //	winCount = 0;
+	//winTime = 0;
+    
+	if (initial == 1){
+		scanMove = 1;
+		initial = 0;
+	}
+	else {
+		scanMove = 2;
+	}
+	
+    // uint8_t scanLoops = 0;
     
     while (TRUE) {
+        
+		if(winTime == 0 && winCount == 0){
+			winCount = 1;
+		}
+        /*	if (scanLoops == 3) //2 == about 10 sec
+         {
+         //stopTimer();
+         move(brake,0);
+         winTime = 0;
+         return winningOutputState;
+         }*/
+		
+		if (winTime == 5000){
+			move(brake,255);
+			winTime = 0;
+			return winningOutputState;
+		}
         
         readLineSensors();
         
         if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
             
+			scanMoveState = 0;
+			//stopTimer();
+			
             return avoidLineState;
         }
         
 		readContactSwitches();
         
         if(fContactSensorValue == 0 || bContactSensorValue == 0 || lContactSensorValue == 0 || rContactSensorValue == 0){
-			
+			scanMoveState = 0;
+			winCount = 0;
+			winTime = 0;
+            
             if(lContactSensorValue == 0 && rContactSensorValue == 1 && fContactSensorValue == 1 && bContactSensorValue == 1){
+				
+				//stopTimer();
                 return escapeState;
             }
             
             else if(lContactSensorValue == 1 && rContactSensorValue == 0 && fContactSensorValue == 1 && bContactSensorValue == 1){
+				
+				//stopTimer();
                 return escapeState;
             }
             
             else if(lContactSensorValue == 0 && rContactSensorValue == 0 && fContactSensorValue == 1 && bContactSensorValue == 1){
+				
+				//stopTimer();
                 return escapeState;
             }
             
             else {
+				//stopTimer();
                 return pushState;
             }
 			
@@ -517,29 +601,52 @@ uint8_t scan(){
         
         readIRSensors();
         
-		if (fcIRSensorValue > 85 || bcIRSensorValue > 85){
-            
+		if (fcIRSensorValue > IRSENSORVALUE || bcIRSensorValue > IRSENSORVALUE){
+            winCount = 0;
+			winTime = 0;
+			scanMoveState = 0;
+			//stopTimer();
 			return flankState;
 		}
         
-        if(frIRSensorValue > 85 || flIRSensorValue > 85 || brIRSensorValue > 85 || blIRSensorValue > 85){
+        if(frIRSensorValue > IRSENSORVALUE || flIRSensorValue > IRSENSORVALUE || brIRSensorValue > IRSENSORVALUE || blIRSensorValue > IRSENSORVALUE){
+			winCount = 0;
+			winTime = 0;
+			scanMoveState = 0;
+			//stopTimer();
             return positionState;
         }
         
 		if (scanMove == 1 && scanMoveState == 0){
 			if (isFront == 1){
-				move(frontleft,255);
+				if (turn == 1){
+					move(frontright,255);
+				}
+				
+				else {
+					move(frontleft,255);
+				}
+				
 			}
             
 			else {
-				move(backright,255);
+				if (turn == 1){
+					move(backleft,255);
+				}
+				
+				else {
+					move(backright,255);
+				}					
+				
 			}
             
+			numberOfMS = 0;
 			scanMoveState = 1;
-			startTimer();
+			//startTimer();
 		}
         
         else if (scanMove == 2 && scanMoveState == 0){
+			
 			if (isFront == 1){
 				move(forward,255);
 			}
@@ -548,21 +655,40 @@ uint8_t scan(){
 				move(backward,255);
 			}
             
+			numberOfMS = 0;
             scanMoveState = 1;
-            startTimer();
+            // startTimer();
         }
         
         else if (scanMove == 3 && scanMoveState == 0){
             
             if (isFront == 1){
-				move(frontright,255);
+				
+				if (turn == 1){
+					move(frontleft,255);
+				}
+				
+				else {
+					move(frontright,255);
+				}
+				
 			}
             
 			else {
-				move(backleft,255);
+				
+				if (turn == 1) {
+					move(backright,255);
+				}
+				
+				else {
+					move(backleft,255);
+				}
+				
 			}
+            
+			numberOfMS = 0;
             scanMoveState = 1;
-            startTimer();
+            // startTimer();
         }
         
         else if (scanMove == 4 && scanMoveState == 0){
@@ -574,23 +700,41 @@ uint8_t scan(){
 			else {
 				move(backward,255);
 			}
+			
+			numberOfMS = 0;
             scanMoveState = 1;
-            startTimer();
+            // startTimer();
         }
         
         else if (scanMove == 5 && scanMoveState == 0){
             if (isFront == 1){
-				move(frontleft,255);
-			}
+				
+				if (turn == 1){
+					move(frontright,255);
+				}
+				
+				else {
+                    move(frontleft,255);
+				}
+			}			
             
 			else {
-				move(backright,255);
-			}
+				
+				if (turn == 1){
+					move (backleft,255);	
+				}
+				
+				else {						
+                    move(backright,255);
+				}
+                
+			}			
+            
+			numberOfMS = 0;
             scanMoveState = 1;
-            startTimer();
-        }
-        
-        
+            //    startTimer();
+            
+		}
         
     }	
     
@@ -601,8 +745,22 @@ uint8_t scan(){
 uint8_t position(){
     //done
     
+	//1 = fl
+	//2 = fr
+	//3 = bl
+	//4 = br
+	winCount = 0;
+	winTime = 0;
+    
 	while (TRUE){
-        readLineSensors();
+        
+		/*if (winTime == 10000){
+         move(brake,0);
+         winTime = 0;
+         return winningOutputState;
+         }*/
+        
+		readLineSensors();
         
         if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
             return avoidLineState;
@@ -632,88 +790,89 @@ uint8_t position(){
         
         readIRSensors();
         
-        if(frIRSensorValue > 85 || flIRSensorValue > 85 || brIRSensorValue > 85 || blIRSensorValue > 85 || fcIRSensorValue > 85 || bcIRSensorValue > 85){
+        if(frIRSensorValue > IRSENSORVALUE || flIRSensorValue > IRSENSORVALUE || brIRSensorValue > IRSENSORVALUE || blIRSensorValue > IRSENSORVALUE || fcIRSensorValue > IRSENSORVALUE || bcIRSensorValue > IRSENSORVALUE){
             
-            if (fcIRSensorValue > 85 || bcIRSensorValue >85){
+            if (fcIRSensorValue > IRSENSORVALUE || bcIRSensorValue >IRSENSORVALUE){
                 return flankState;
             }
             
             else {
                 
-                if (frIRSensorValue > 85 && flIRSensorValue <= 85 && brIRSensorValue <= 85 && blIRSensorValue <= 85){
+                if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
                     move(frontright,255); //fr only
                 }
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue > 85 && brIRSensorValue <= 85 && blIRSensorValue <= 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
                     move(frontleft,255); //fl only
                 }	
                 
-                /*else if (frIRSensorValue > 85 && flIRSensorValue > 85 && brIRSensorValue <= 85 && blIRSensorValue <= 85){
-                 move(frontright,255); //f both 
-                 }*/	
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
+                 	move(forward,255); //f both 
+                }	
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue <= 85 && brIRSensorValue <= 85 && blIRSensorValue > 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
                     move(backleft,255); //bl only
                 }
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue <= 85 && brIRSensorValue > 85 && blIRSensorValue <= 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
                     move(backright,255); //br only
                 }	
                 
-                /*else if (frIRSensorValue <= 85 && flIRSensorValue <= 85 && brIRSensorValue > 85 && blIRSensorValue > 85){
-                 move(backright,255); //b both 
-                 }*/	
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
+                 	move(backward,255); //b both 
+                }	
                 
-                else if (frIRSensorValue > 85 && flIRSensorValue <= 85 && brIRSensorValue > 85 && blIRSensorValue <= 85){
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
                     move(frontright,255); //fr only with back
                 }
                 
-                else if (frIRSensorValue > 85 && flIRSensorValue <= 85 && brIRSensorValue <= 85 && blIRSensorValue > 85){
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
                     move(frontright,255); //fr only with back
                 }
                 
-                else if (frIRSensorValue > 85 && flIRSensorValue <= 85 && brIRSensorValue > 85 && blIRSensorValue > 85){
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue <= IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
                     move(frontright,255); //fr only with back
                 }
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue > 85 && brIRSensorValue > 85 && blIRSensorValue <= 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
                     move(frontleft,255); //fl only with back
                 }	
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue > 85 && brIRSensorValue <= 85 && blIRSensorValue > 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
                     move(frontleft,255); //fl only with back
                 }
                 
-                else if (frIRSensorValue <= 85 && flIRSensorValue > 85 && brIRSensorValue > 85 && blIRSensorValue > 85){
+                else if (frIRSensorValue <= IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
                     move(frontleft,255); //fl only with back
                 }
                 
-                /*else if (frIRSensorValue > 85 && flIRSensorValue > 85 && brIRSensorValue <= 85 && blIRSensorValue <= 85){
-                 move(frontright,255); //f both with back
-                 }*/
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
+                 	move(forward,255); //f both with back
+                }
                 
-                /* else if (frIRSensorValue > 85 && flIRSensorValue > 85 && brIRSensorValue > 85 && blIRSensorValue <= 85){
-                 move(frontright,255); //f both with back
-                 }*/
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue <= IRSENSORVALUE){
+                    move(forward,255); //f both with back
+                }
                 
-                /*else if (frIRSensorValue > 85 && flIRSensorValue > 85 && brIRSensorValue <= 85 && blIRSensorValue > 85){
-                 move(frontright,255); //f both with back
-                 }*/
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
+                    move(forward,255); //f both with back
+                }
                 
-                /*else if (frIRSensorValue > 85 && flIRSensorValue > 85 && brIRSensorValue > 85 && blIRSensorValue > 85){
-                 move(frontright,255); //f both with back
-                 }
-                 */
+                else if (frIRSensorValue > IRSENSORVALUE && flIRSensorValue > IRSENSORVALUE && brIRSensorValue > IRSENSORVALUE && blIRSensorValue > IRSENSORVALUE){
+                    move(forward,255); //f both with back
+                }
+                
                 else{
-                    
+                    // move(backward,255);
                 }
             }
             
         }
         
         else {
+			numberOfMS = 0;
             scanMoveState = 0;
-            scanMove = 1;
+            scanMove = 2;
             
             return scanState;
         }
@@ -828,10 +987,17 @@ uint16_t getDistanceTime(uint16_t sensorValue){
 uint8_t flank(){
     //pierre-marc
     
-	uint8_t chooseFront = 0;
+	winCount = 0;
+	winTime = 0;
     
 	while (TRUE){
 		
+		/*if (winTime == 10000){
+         move(brake,0);
+         winTime = 0;
+         return winningOutputState;
+         }*/
+        
         readLineSensors();
         
         if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
@@ -861,22 +1027,26 @@ uint8_t flank(){
         }	
 		
 		readIRSensors();
-		if (fcIRSensorValue > 85 || bcIRSensorValue > 85) { //values changed after testing
+		if (fcIRSensorValue > IRSENSORVALUE || bcIRSensorValue > IRSENSORVALUE) { //values changed after testing
             //front sensor not in range
             
-            if (fcIRSensorValue > 85 && bcIRSensorValue <= 85){
-                chooseFront = 1;
+            if (fcIRSensorValue > IRSENSORVALUE && bcIRSensorValue <= IRSENSORVALUE){
+                isFront = 1;
             }
             
-            else if (fcIRSensorValue <= 85 && bcIRSensorValue > 85){
-                chooseFront = 0;
+            else if (fcIRSensorValue <= IRSENSORVALUE && bcIRSensorValue > IRSENSORVALUE){
+                isFront = 0;
             }
             
-            else if (fcIRSensorValue > 85 && bcIRSensorValue > 85){
-                chooseFront = 1;
+            else if (fcIRSensorValue > IRSENSORVALUE && bcIRSensorValue > IRSENSORVALUE){
+                isFront = 1;
             }
             
-            if (chooseFront == 1){
+			else {
+				move(forward,255);
+			}
+            
+            if (isFront == 1){
                 move(forward,255);
             }
             
@@ -886,15 +1056,24 @@ uint8_t flank(){
         } 
         
         else {
-            move(brake,255);
+            // move(brake,255);
             
-            if (flIRSensorValue <= 85 && frIRSensorValue <= 85) { //values changed after testing
-                scanMoveState = 0;
-                scanMove = 1;
+            if (flIRSensorValue <= IRSENSORVALUE && frIRSensorValue <= IRSENSORVALUE) { //values changed after testing
+                numberOfMS = 0;
+				scanMoveState = 0;
+                scanMove = 2;
                 
                 return scanState;
             }  
             
+			else if (blIRSensorValue <= IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE) { //values changed after testing
+                numberOfMS = 0;
+				scanMoveState = 0;
+                scanMove = 2;
+                
+                return scanState;
+            }  
+			
             else {
                 return positionState;
             }
@@ -944,10 +1123,10 @@ uint8_t flank(){
      
      readIRSensors();
      
-     if (fcIRSensorValue <= 85) { //values changed after testing
+     if (fcIRSensorValue <= IRSENSORVALUE) { //values changed after testing
      //front sensor not in range
      
-     if (flIRSensorValue <= 85 && frIRSensorValue <= 85) { //values changed after testing
+     if (flIRSensorValue <= IRSENSORVALUE && frIRSensorValue <= IRSENSORVALUE) { //values changed after testing
      
      return scanState; //not visible anymore
      }  
@@ -961,10 +1140,10 @@ uint8_t flank(){
      }
      
      if (isFront == 0){
-     if (bcIRSensorValue <= 85) { //values changed after testing
+     if (bcIRSensorValue <= IRSENSORVALUE) { //values changed after testing
      //front sensor not in range
      
-     if (blIRSensorValue <= 85 && brIRSensorValue <= 85) { //values changed after testing
+     if (blIRSensorValue <= IRSENSORVALUE && brIRSensorValue <= IRSENSORVALUE) { //values changed after testing
      
      return scanState; //not visible anymore
      }
@@ -1062,22 +1241,95 @@ uint8_t flank(){
 uint8_t push(){
     //fawzi
     
+	winCount = 0;
+	winTime = 0;
+	
+	pushCountState = 1;
+	pushCount = 0;
+	
+	//startTimer();
+	
     while (TRUE){
         
+		
+		/*if (winTime == 10000){
+         move(brake,0);
+         winTime = 0;
+         return winningOutputState;
+         }*/
+		
         readLineSensors();
         
         if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
+			
+			if (fContactSensorValue == 0){
+				if(brLineSensorValue == 1 || blLineSensorValue == 1){
+					move(forward,255);
+					return losingOutputState;
+				}
+                
+				else if (frLineSensorValue == 1 || flLineSensorValue){
+					move(brake,255);
+					return winningOutputState;
+				}
+			}
+            
+			else if (bContactSensorValue == 0){
+				if(frLineSensorValue == 1 || flLineSensorValue == 1){
+					move(backward,255);
+					return losingOutputState;
+				}
+                
+				else if (brLineSensorValue == 1 || blLineSensorValue == 1){
+					move(brake,255);
+					return winningOutputState;
+				}
+			}
+            
             return avoidLineState;
         }
         
         readContactSwitches();
-        readIRSensors();
+        //readIRSensors();
+        
+		if (pushCount == 2500){
+			pushCount = 0;
+            
+			if (fContactSensorValue == 0){
+				isFront = 0;
+				move(backward,255);
+				_delay_ms(200);
+				move(backright,255);
+				_delay_ms(400);
+				
+				return scanState;
+			}
+            
+			else if (bContactSensorValue == 0){
+				isFront = 1;
+				move(forward,255);
+				_delay_ms(200);
+				move(frontright,255);
+				_delay_ms(400);
+				return scanState;
+			}
+            
+			else if (rContactSensorValue == 0 || lContactSensorValue == 0){
+				isFront = 0;
+				move(backward,255);
+				_delay_ms(200);
+				move(backright,255);
+				_delay_ms(400);
+				return scanState;
+			}
+		}
+        
         
         if(fContactSensorValue == 0 || bContactSensorValue == 0 || lContactSensorValue == 0 || rContactSensorValue == 0){
             
             if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 1){
                 
-                /*if (brIRSensorValue > 85 || blIRSensorValue > 85 || bcIRSensorValue > 85){
+                /* if (brIRSensorValue > IRSENSORVALUE || blIRSensorValue > IRSENSORVALUE || bcIRSensorValue > IRSENSORVALUE){
                  move(forward,255);
                  _delay_ms(350);
                  isFront = 0;
@@ -1096,7 +1348,7 @@ uint8_t push(){
             
             else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 0){
                 
-                /*if (brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  move(forward,255);
                  _delay_ms(350);
                  isFront = 0;
@@ -1114,7 +1366,7 @@ uint8_t push(){
             
             else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 1){
                 
-                /*if (brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  move(forward,255);
                  _delay_ms(350);
                  isFront = 0;
@@ -1132,7 +1384,7 @@ uint8_t push(){
             
             else if(fContactSensorValue == 1 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 0){
                 
-                /*if (brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  move(forward,255);
                  _delay_ms(350);
                  isFront = 0;
@@ -1151,7 +1403,7 @@ uint8_t push(){
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 1){
                 
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1169,7 +1421,7 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 1 && rContactSensorValue == 0){
-                /* if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                /* if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1186,7 +1438,7 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 1){
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1204,7 +1456,7 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 1 && lContactSensorValue == 0 && rContactSensorValue == 0){
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1221,9 +1473,9 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 1){
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85 || brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE || brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  
-                 if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                 if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1250,9 +1502,9 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 0 && lContactSensorValue == 1 && rContactSensorValue == 0){
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85 || brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE || brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  
-                 if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                 if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1278,9 +1530,9 @@ uint8_t push(){
             }
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 1){
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85 || brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE || brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  
-                 if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                 if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1309,9 +1561,9 @@ uint8_t push(){
             
             else if(fContactSensorValue == 0 && bContactSensorValue == 0 && lContactSensorValue == 0 && rContactSensorValue == 0){
                 
-                /*if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85 || brIRSensorValue < 85 || blIRSensorValue < 85 || bcIRSensorValue < 85){
+                /*if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE || brIRSensorValue < IRSENSORVALUE || blIRSensorValue < IRSENSORVALUE || bcIRSensorValue < IRSENSORVALUE){
                  
-                 if (frIRSensorValue < 85 || flIRSensorValue < 85 || fcIRSensorValue < 85){
+                 if (frIRSensorValue < IRSENSORVALUE || flIRSensorValue < IRSENSORVALUE || fcIRSensorValue < IRSENSORVALUE){
                  move(backward,255);
                  _delay_ms(350);
                  isFront = 1;
@@ -1348,8 +1600,9 @@ uint8_t push(){
             
         }
         else {
+			numberOfMS = 0;
             scanMoveState = 0;
-            scanMove = 1;
+            scanMove = 2;
             
             return scanState;
         }
@@ -1360,9 +1613,16 @@ uint8_t push(){
 
 uint8_t escape(){
     //fawzi
-    
+	
     while (TRUE){
-        readLineSensors();
+		
+		if (winTime == 5000){
+			move(brake,255);
+			winTime = 0;
+			return winningOutputState;
+		}
+        
+		readLineSensors();
         
         if(frLineSensorValue == 1 || flLineSensorValue == 1 || brLineSensorValue == 1 || blLineSensorValue == 1){
             return avoidLineState;
@@ -1381,8 +1641,9 @@ uint8_t escape(){
         }
         
         else {
+			numberOfMS = 0;
             scanMoveState = 0;
-            scanMove = 1;
+            scanMove = 2;
             
             return scanState;
         }
@@ -1401,84 +1662,146 @@ uint8_t avoidLine() {
     
     while (TRUE){
         
+		if (winTime == 5000){
+			move(brake,255);
+			winTime = 0;
+			return winningOutputState;
+		}
+        
         readLineSensors();
         
         if (flLineSensorValue == 1 || frLineSensorValue == 1 || blLineSensorValue == 1 || brLineSensorValue == 1){
             
             if (flLineSensorValue == 1 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue == 0){
                 move(backward,255);
-                _delay_ms(350);
-                
+				//_delay_ms(500);
                 isFront = 0;
+				turn = 0;
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue == 1){
                 move(forward,255);
-                _delay_ms(350);
+                // _delay_ms(500);
                 isFront = 1;
+				turn = 0;
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 0 && brLineSensorValue == 1){
                 //go fl
-                
-                move(frontright,255);
-                _delay_ms(350);
-                move(forward,255);
-                _delay_ms(350);
+                /*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+				move(frontright,255);
+                _delay_ms(200);
+			    move(forward,255);
+				_delay_ms(500);
+				/*if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 
+                 } */               
+				
                 isFront = 1;
+				turn = 1;
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue == 0){
                 //go fr
-                move(frontleft,255);
-                _delay_ms(350);
+                /*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+			    move(frontleft,255);
+                _delay_ms(200);
                 move(forward,255);
-                _delay_ms(350);
+                _delay_ms(500);
+				/*if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 move(forward,255);
+                 }	*/			
+                
                 
                 isFront = 1;
-                
+				turn = 0; 
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue == 0){
                 //go bl
-                move(backleft,255);
-                _delay_ms(350);
-                move(backward,255);
-                _delay_ms(350);
+				/*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+                move(backright,255);
+                _delay_ms(200);
+				move(backward,255);
+				_delay_ms(500);
+				/*if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 
+                 }*/
                 
                 isFront = 0;
-                
+                turn = 0;
             }
             
             else if (flLineSensorValue == 1 && frLineSensorValue == 0 && blLineSensorValue == 0 && brLineSensorValue == 0){
                 
-                move(backright,255);
-                _delay_ms(350);
-                move(backward,255);
-                _delay_ms(350);
+				/*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+                move(backleft,255);
+                _delay_ms(200);
+				move(backward,255);
+				_delay_ms(500);
+				/*if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 move(backward,255);
+                 }*/
+                
                 
                 isFront = 0;
-                
-                
+                turn = 1;   
             }
             
             else if (flLineSensorValue == 1 && frLineSensorValue == 0 && blLineSensorValue == 1 && brLineSensorValue == 0){
                 //left wheel outside go right
-                move(frontright,255);
-                _delay_ms(350);
-                move(forward,255);
-                _delay_ms(500);
-                isFront = 1;
+				
+				/*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+                move(frontleft,255);
+                _delay_ms(200);
+			    move(forward,255);
+				_delay_ms(500);
+                /*if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 
+                 move(forward,255);
+                 }*/
                 
+                isFront = 1;
+                turn = 0;
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 1 && blLineSensorValue == 0 && brLineSensorValue == 1){
                 //right wheel outside go left
-                move(frontleft,255);
-                _delay_ms(350);
-                move(forward,255);
-                _delay_ms(500);
+				/*if(avoidCountState == 0 && avoidCount == 0){
+                 avoidCountState = 1;
+                 }*/
+				
+                move(frontright,255);
+				_delay_ms(200);
+				move(forward,255);
+				_delay_ms(500);
+                /* if (avoidCountState == 0 && avoidCount == avoidLineTime){
+                 avoidCount = 0;
+                 move(forward,255);
+                 }*/         
+                
                 isFront = 1;
+				turn = 0;
             }
             
             else if (flLineSensorValue == 0 && frLineSensorValue == 1 && blLineSensorValue == 1 && brLineSensorValue == 0){
@@ -1497,8 +1820,9 @@ uint8_t avoidLine() {
         }
         
         else {
+			numberOfMS = 0;
             scanMoveState = 0;
-            scanMove = 1;
+            scanMove = 2;
             
             return scanState;
         }
@@ -1560,6 +1884,8 @@ uint8_t returnToRing() {
 
 void PlayNotes(unsigned int note_frequency,unsigned int duration)
 {
+    DDRB |= (1 << PWMSpeakerDir);
+    
     unsigned int top_value,duty_cycle;    // Calculate the Top Value
     // TOP = Board Clock Frequency / (2 x N x Notes Frequency)
     // Where N is Prescler: 8
@@ -1609,6 +1935,22 @@ void PlayNotes(unsigned int note_frequency,unsigned int duration)
 		_delay_ms(118);	
 	}
     
+	else if (duration == 243){
+		_delay_ms(243);
+	}
+    
+	else if (duration == 81){
+		_delay_ms(81);
+	}
+    
+	else if (duration == 162){
+		_delay_ms(162);
+	}
+    
+	else if (duration == 730){
+		_delay_ms(730);
+	}
+    
     // Turn OFF the TIMER1 Prescaler of 8
     TCCR1B &= ~(1<<CS11);    // Delay Between Each Notes 1/5 duration
     
@@ -1641,7 +1983,34 @@ void PlayNotes(unsigned int note_frequency,unsigned int duration)
 		_delay_ms(24);	
 	}
     
-	
+	else if (duration == 243){
+		_delay_ms(49);
+	}
+    
+	else if (duration == 81){
+		_delay_ms(16);
+	}
+    
+	else if (duration == 162){
+		_delay_ms(32);
+	}
+    
+	else if (duration == 730){
+		_delay_ms(146);
+	}
+    
+    TCNT1H = 0;
+    TCNT1L = 0;
+    
+	ICR1H = 0;
+    ICR1L = 0;   
+    
+    OCR1AH = 0;
+    OCR1AL = 0;
+    TCCR1B &= ~(1<<CS11); 
+    
+    DDRB &= ~(1 << PWMSpeakerDir);
+    
 }
 
 uint8_t losingOutput() {
@@ -1695,14 +2064,49 @@ uint8_t winningOutput(){
     PlayNotes(notes[25],118);
     PlayNotes(notes[26],1300);
     
+    
+	return 0;
 }
 
 
 int main(){
     
     setup(); //setting up the ports
-    _delay_ms(5000); //wait state
+    //_delay_ms(5000); //wait state
+    
+	unsigned int notes[27]={A4,F4,C4,D4,F4,F4,D4,C4,F4,F4,C5,A4,G4,C4,A4,F4,C4,D4,F4,F4,D4,C4,D4,Ac4,A4,G4,F4}; 	         
+    
+    PlayNotes(notes[0],325);
+    PlayNotes(notes[1],243);
+    PlayNotes(notes[2],81);
+    PlayNotes(notes[3],81);
+    PlayNotes(notes[4],162);
+    PlayNotes(notes[5],325);
+    PlayNotes(notes[6],81);
+    PlayNotes(notes[7],162);
+    PlayNotes(notes[8],162);
+    PlayNotes(notes[9],162);
+    PlayNotes(notes[10],162);
+    PlayNotes(notes[11],243);
+    PlayNotes(notes[12],325);
+    PlayNotes(notes[13],81);
+    PlayNotes(notes[14],325);
+    PlayNotes(notes[15],243);
+    PlayNotes(notes[16],81);
+    PlayNotes(notes[17],81);
+    PlayNotes(notes[18],162);
+    PlayNotes(notes[19],325);
+    PlayNotes(notes[20],81);
+    PlayNotes(notes[21],162);
+    PlayNotes(notes[22],162);
+    PlayNotes(notes[23],81);
+    PlayNotes(notes[24],81);  
+	PlayNotes(notes[25],81); 
+	PlayNotes(notes[26],730); 
+    
     initialize(); //initialize states
+	
+	startTimer();
     
     while (TRUE) {
         
@@ -1743,8 +2147,3 @@ int main(){
     
     return 0;
 }
-
-
-
-
-
